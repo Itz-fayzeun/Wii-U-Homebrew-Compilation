@@ -1,0 +1,85 @@
+name: LunarNX FR - Nintendo Switch NRO
+
+on:
+  push:
+    branches:
+      - lunarnx-fr-build
+
+permissions:
+  contents: read
+
+jobs:
+  build-switch-fr:
+    name: Compiler LunarNX en français
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:20251117
+    timeout-minutes: 60
+
+    steps:
+      - name: Recuperer le correctif français
+        uses: actions/checkout@v4
+
+      - name: Restaurer le script de traduction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, lzma
+          chunks = sorted(Path("lunarnx_fr_payload").glob("*.txt"))
+          assert len(chunks) == 8, f"Expected 8 patch fragments, found {len(chunks)}"
+          data = "".join(p.read_text(encoding="utf-8") for p in chunks)
+          assert len(data) == 14012, f"Invalid patch length: {len(data)}"
+          Path("/tmp/apply_fr.py").write_bytes(lzma.decompress(base64.b64decode(data)))
+          print("French patch restored")
+          PY
+          python3 -m py_compile /tmp/apply_fr.py
+
+      - name: Recuperer LunarNX et appliquer le français
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth=1 https://github.com/thinkzhou/LunarNX.git LunarNX
+          python3 /tmp/apply_fr.py LunarNX
+
+      - name: Installer les dépendances officielles
+        shell: bash
+        working-directory: LunarNX
+        run: |
+          set -euo pipefail
+          ./scripts/setup_dependencies.sh
+          ./scripts/setup_chiaki_dependencies.sh
+
+      - name: Compiler les bibliothèques PlayStation
+        shell: bash
+        working-directory: LunarNX
+        run: ./tools/chiaki_switch/build_in_container.sh
+
+      - name: Compiler LunarNX Switch
+        shell: bash
+        working-directory: LunarNX
+        env:
+          CURL_PROVIDER: moonlight
+        run: ./scripts/build_switch_in_container.sh
+
+      - name: Verifier le fichier NRO
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s LunarNX/build/switch/LunarNX.nro
+          ls -lh LunarNX/build/switch/LunarNX.nro
+          sha256sum LunarNX/build/switch/LunarNX.nro > LunarNX/build/switch/SHA256SUMS
+
+      - name: Telecharger la version française
+        uses: actions/upload-artifact@v4
+        with:
+          name: LunarNX-FR-NRO
+          path: |
+            LunarNX/build/switch/LunarNX.nro
+            LunarNX/build/switch/SHA256SUMS
+            LunarNX/LICENSE
+            LunarNX/THIRD_PARTY_NOTICES.md
+            LunarNX/LICENSES/AGPL-3.0.txt
+          if-no-files-found: error
+          retention-days: 30
