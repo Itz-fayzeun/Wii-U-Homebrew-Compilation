@@ -198,9 +198,10 @@ edit("src/ui/ps_activity.cpp", [
 ])
 
 edit("src/ui/stream_view.cpp", [
-    ("""#include "ps_settings_activity.h" """,
-     """#include "ps_settings_activity.h"
-#include "../ps/ps_stream_controller.h" """),
+    ("""#include "ps_settings_activity.h"
+""", """#include "ps_settings_activity.h"
+#include "../ps/ps_stream_controller.h"
+"""),
     ("""    quick_menu_->setHeight(620);""", """    quick_menu_->setHeight(690);"""),
     ("""(brls::Application::ORIGINAL_WINDOW_HEIGHT - 620) / 2);""", """(brls::Application::ORIGINAL_WINDOW_HEIGHT - 690) / 2);"""),
     ("""    auto* platform_button = new brls::Button();""", """    if (runtime_->getStreamPlatform() == app::StreamPlatform::PlayStation) {
