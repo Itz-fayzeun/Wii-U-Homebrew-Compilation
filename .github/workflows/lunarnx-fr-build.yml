@@ -1,10 +1,11 @@
-name: LunarNX FR+ - Nintendo Switch NRO
+name: LunarNX FRIDAY - Nintendo Switch NRO
 
 on:
   push:
     branches:
       - lunarnx-fr-build
       - lunarnx-fr-plus
+      - lunarnx-friday
 
 permissions:
   contents: read
@@ -51,6 +52,13 @@ jobs:
           python3 -m py_compile lunarnx_fr_payload/apply_features.py
           python3 lunarnx_fr_payload/apply_features.py LunarNX
 
+      - name: Installer FRIDAY sans modifier le Remote Play
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile lunarnx_fr_payload/apply_friday.py friday_gateway/server.py
+          python3 lunarnx_fr_payload/apply_friday.py LunarNX
+
       - name: Installer les dépendances officielles
         shell: bash
         working-directory: LunarNX
@@ -81,17 +89,23 @@ jobs:
           git -C LunarNX rev-parse HEAD > LunarNX/build/switch/UPSTREAM_SHA.txt
           cp /tmp/apply_fr.py LunarNX/build/switch/apply_fr.py
           cp lunarnx_fr_payload/apply_features.py LunarNX/build/switch/apply_features.py
+          cp lunarnx_fr_payload/apply_friday.py LunarNX/build/switch/apply_friday.py
 
       - name: Telecharger la version française
         uses: actions/upload-artifact@v4
         with:
-          name: LunarNX-FR-Plus-NRO
+          name: LunarNX-FRIDAY-NRO
           path: |
             LunarNX/build/switch/LunarNX.nro
             LunarNX/build/switch/SHA256SUMS
             LunarNX/build/switch/UPSTREAM_SHA.txt
             LunarNX/build/switch/apply_fr.py
             LunarNX/build/switch/apply_features.py
+            LunarNX/build/switch/apply_friday.py
+            lunarnx_fr_payload/friday_chat_activity.cpp
+            lunarnx_fr_payload/friday_chat_activity.h
+            friday_gateway/server.py
+            friday_gateway/README.md
             lunarnx_fr_payload/FEATURES_FR.md
             LunarNX/LICENSE
             LunarNX/THIRD_PARTY_NOTICES.md
