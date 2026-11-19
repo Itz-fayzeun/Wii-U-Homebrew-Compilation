@@ -198,6 +198,9 @@ edit("src/ui/ps_activity.cpp", [
 ])
 
 edit("src/ui/stream_view.cpp", [
+    ("""#include "ps_settings_activity.h" """,
+     """#include "ps_settings_activity.h"
+#include "../ps/ps_stream_controller.h" """),
     ("""    quick_menu_->setHeight(620);""", """    quick_menu_->setHeight(690);"""),
     ("""(brls::Application::ORIGINAL_WINDOW_HEIGHT - 620) / 2);""", """(brls::Application::ORIGINAL_WINDOW_HEIGHT - 690) / 2);"""),
     ("""    auto* platform_button = new brls::Button();""", """    if (runtime_->getStreamPlatform() == app::StreamPlatform::PlayStation) {
@@ -206,13 +209,20 @@ edit("src/ui/stream_view.cpp", [
         power_button->setStyle(&brls::BUTTONSTYLE_DEFAULT);
         power_button->setCornerRadius(0);
         power_button->setHighlightCornerRadius(3);
-        power_button->setText("Alimentation PS5 (ouvrir menu)");
+        power_button->setText("Mettre PS5 en mode repos");
         power_button->registerClickAction([this](brls::View*) -> bool {
-            // The PS button opens Control Center. User must choose the
-            // console's native Power > Rest Mode option; do not fake power-off.
-            setQuickMenuVisible(false);
-            runtime_->requestPlatformHomeButton();
-            brls::Application::notify("Sur la PS5 : Alimentation > Mode repos.");
+            auto ps_controller = std::dynamic_pointer_cast<ps::PsStreamController>(runtime_);
+            if (!ps_controller) return true;
+            auto* confirm = new brls::Dialog("Mettre la PS5 en mode repos ?");
+            confirm->addButton("Annuler", []() {});
+            confirm->addButton("Mode repos", [ps_controller]() {
+                if (ps_controller->requestRestMode()) {
+                    brls::Application::notify("Commande de mise en repos envoyée.");
+                } else {
+                    brls::Application::notify("Commande indisponible : PS5 non connectée.");
+                }
+            });
+            confirm->open();
             return true;
         });
         quick_menu_->addView(power_button);
@@ -303,4 +313,33 @@ const UiPalette& uiPalette() {
         : gFrLightPalette;
 }"""),
 ])
+
+# Native Chiaki go-to-bed command is only allowed while the stream is active.
+edit("src/ps/ps_stream_session.h", [
+    ("    void stop();\n    PsSessionState state() const",
+     "    void stop();\n    bool requestRestMode();\n    PsSessionState state() const"),
+])
+edit("src/ps/ps_stream_session.cpp", [
+    ("void PsStreamSession::stop() {", """bool PsStreamSession::requestRestMode() {
+    if (!initialized_ || !started_ ||
+        state_.load() != PsSessionState::Streaming) return false;
+    return chiaki_session_goto_bed(&session_) == CHIAKI_ERR_SUCCESS;
+}
+
+void PsStreamSession::stop() {"""),
+])
+edit("src/ps/ps_stream_controller.h", [
+    ("    bool startStream();\n    void requestCancel();",
+     "    bool startStream();\n    bool requestRestMode();\n    void requestCancel();"),
+])
+edit("src/ps/ps_stream_controller.cpp", [
+    ("void PsStreamController::setRumbleEnabled(bool enabled) {", """bool PsStreamController::requestRestMode() {
+    std::shared_lock<std::shared_mutex> operation_lock(stream_operation_mutex_);
+    if (state_.load() != app::StreamState::Streaming || !session_) return false;
+    return session_->requestRestMode();
+}
+
+void PsStreamController::setRumbleEnabled(bool enabled) {"""),
+])
+
 print("All LunarNX FR+ source patches applied.")
