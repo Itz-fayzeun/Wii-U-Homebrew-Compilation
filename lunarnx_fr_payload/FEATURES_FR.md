@@ -5,7 +5,7 @@ Version expérimentale de LunarNX pour Switch modifiée, basée sur la traductio
 ## Fonctions ajoutées
 
 1. **Qualité réseau auto (au démarrage)** : profil 720p/12 Mb/s sur réseau local ou 720p/8 Mb/s via PSN. Ce n'est **pas** un débit adaptatif pendant le jeu ; changer de profil exige une nouvelle session.
-2. **Alimentation PS5** : bouton dans le menu tactile du streaming qui envoie la touche PS et indique comment choisir « Alimentation > Mode repos » sur la PS5. Le réveil depuis le mode repos utilise la fonction déjà incluse dans LunarNX. **Aucune mise en repos instantanée ou extinction forcée n'a été ajoutée.**
+2. **Alimentation PS5** : bouton « Mettre PS5 en mode repos » dans le menu tactile pendant le streaming. Il demande une confirmation avant d'envoyer la commande Chiaki `chiaki_session_goto_bed`. Le réveil depuis le mode repos utilise la fonction déjà incluse dans LunarNX. **Cette commande dépend de l'état de connexion et nécessite un test sur vraie PS5.** Aucun arrêt électrique forcé n'est ajouté.
 3. **Économie de batterie** : limite le nouveau flux PS à 720p/6 Mb/s et désactive les vibrations. C'est une approche légère de réduction de charge, **sans gain d'autonomie mesuré** et sans changement automatique de luminosité/fréquence CPU.
 4. **Statistiques en direct** : case à cocher pour afficher le bandeau d'informations réseau/FPS dès le lancement d'un flux PS (LunarNX possède déjà ces statistiques). Leur affichage reste pilotable avec le menu tactile.
 5. **Thèmes personnalisables** : accent menthe/bleu PS/violet/rouge. Le choix est enregistré ; **redémarrer LunarNX** pour l'appliquer.
