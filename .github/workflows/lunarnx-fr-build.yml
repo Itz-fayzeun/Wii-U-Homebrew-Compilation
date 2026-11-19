@@ -1,9 +1,10 @@
-name: LunarNX FR - Nintendo Switch NRO
+name: LunarNX FR+ - Nintendo Switch NRO
 
 on:
   push:
     branches:
       - lunarnx-fr-build
+      - lunarnx-fr-plus
 
 permissions:
   contents: read
@@ -43,6 +44,13 @@ jobs:
           git clone --depth=1 https://github.com/thinkzhou/LunarNX.git LunarNX
           python3 /tmp/apply_fr.py LunarNX
 
+      - name: Ajouter les six ameliorations FR+
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile lunarnx_fr_payload/apply_features.py
+          python3 lunarnx_fr_payload/apply_features.py LunarNX
+
       - name: Installer les dépendances officielles
         shell: bash
         working-directory: LunarNX
@@ -70,14 +78,21 @@ jobs:
           test -s LunarNX/build/switch/LunarNX.nro
           ls -lh LunarNX/build/switch/LunarNX.nro
           sha256sum LunarNX/build/switch/LunarNX.nro > LunarNX/build/switch/SHA256SUMS
+          git -C LunarNX rev-parse HEAD > LunarNX/build/switch/UPSTREAM_SHA.txt
+          cp /tmp/apply_fr.py LunarNX/build/switch/apply_fr.py
+          cp lunarnx_fr_payload/apply_features.py LunarNX/build/switch/apply_features.py
 
       - name: Telecharger la version française
         uses: actions/upload-artifact@v4
         with:
-          name: LunarNX-FR-NRO
+          name: LunarNX-FR-Plus-NRO
           path: |
             LunarNX/build/switch/LunarNX.nro
             LunarNX/build/switch/SHA256SUMS
+            LunarNX/build/switch/UPSTREAM_SHA.txt
+            LunarNX/build/switch/apply_fr.py
+            LunarNX/build/switch/apply_features.py
+            lunarnx_fr_payload/FEATURES_FR.md
             LunarNX/LICENSE
             LunarNX/THIRD_PARTY_NOTICES.md
             LunarNX/LICENSES/AGPL-3.0.txt
